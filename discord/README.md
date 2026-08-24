@@ -5,6 +5,7 @@ For building you need:
 
 Then run the following commands:
 ```
+git submodule update --init
 mkdir build && cd build
 cmake ..
 cmake --build .
