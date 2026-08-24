@@ -125,9 +125,7 @@ void gameLoop(std::string repo) {
 
     auto& rpc = discord::RPCManager::get();
 
-    json out;
     json images = getImageKeys(repo);
-    std::string image;
     char buffer[1024];
 
     do {
@@ -140,32 +138,9 @@ void gameLoop(std::string repo) {
 			msg = buffer;
 			
 			// Attempt to set Rich Presence
-			try {
-				out = json::parse(msg);
-				if (out["sender"] == "Wii U") {
-					
-					fmt::println("Received: {}", msg);
-
-					idle = false;
-				}
-
-				try {
-					image = images[out["long"]];
-				} catch (...) {
-					image = "oh no it didn't work";
-				}
-
-				if (out.contains("dst")) { // Update 2.1
-					updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"], out["dst"] == 1));
-				}
-				else if (out.contains("img")) { // Update 2.0
-					updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"]));
-				}
-				else { // Update 1.9
-					updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, "backwards", adjustEpochToUtc(out["time"]));
-				}
+			if (parseJsonAndUpdate(msg, images, repo, adjustEpochToUtc) < 0) {
+				fmt::println("Failed to update Rich Presence");
 			}
-			catch (...) {}
 		}
 		else {
 			fmt::println("Recieved empty message");

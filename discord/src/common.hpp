@@ -1,6 +1,9 @@
 #include <discord-rpc.hpp>
 #include <fmt/format.h>
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 constexpr auto APPLICATION_ID = "1353248127469228074";
 unsigned short UDP_PORT = 5005;
 std::atomic<bool> idle = false;
@@ -69,4 +72,39 @@ void checkIdle() {
 		idle = true;
 	}
 	return;
+}
+
+short parseJsonAndUpdate(std::string msg, json images, std::string repo, time_t (*adjustEpochToUtc)(time_t, bool)) {
+    std::string image;
+
+    try {
+        json out = json::parse(msg);
+        if (out["sender"] == "Wii U") {
+            
+            fmt::println("Received: {}", msg);
+
+            idle = false;
+        }
+
+        try {
+            image = images[out["long"]];
+        } catch (...) {
+            image = "oh no it didn't work";
+        }
+        
+        if (out.contains("dst")) { // Update 2.1
+            updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"], out["dst"] == 1));
+        }
+        else if (out.contains("img")) { // Update 2.0
+            updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"], false));
+        }
+        else { // Update 1.9
+            updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, "backwards", adjustEpochToUtc(out["time"], false));
+        }
+    }
+    catch (...) {
+        return -1;
+    }
+
+    return 0;
 }
