@@ -13,7 +13,7 @@ from pypresence.types import ActivityType, StatusDisplayType
 APP_ID = "1353248127469228074"
 REPO = "flamingnineteen/richpresencewups-db"
 PORT = 5005
-VERSION = 2.1
+VERSION = 2.2
 
 # Check for command line arguments
 i = 2
