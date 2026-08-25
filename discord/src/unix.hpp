@@ -56,33 +56,6 @@ std::string fetchRawHtml(std::string server, std::string path) {
 	return content;
 }
 
-int getStatusCode(std::string server, std::string path) {
-	CURL* curl = curl_easy_init();
-	if (!curl) return -1;
-
-	long code = 0;
-	std::string url = "https://" + server + path;
-	std::string unused;
-
-	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-	curl_easy_setopt(curl, CURLOPT_USERAGENT, "WiiURichPresence/1.0");
-	curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &unused);
-	curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
-
-	CURLcode res = curl_easy_perform(curl);
-	if (res != CURLE_OK) {
-		curl_easy_cleanup(curl);
-		return -1;
-	}
-
-	curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &code);
-	curl_easy_cleanup(curl);
-
-	return code;
-}
-
 // Fetch the image keys from the repository
 json getImageKeys(std::string repo) {
     json images;

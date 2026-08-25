@@ -78,7 +78,7 @@ void GameLoop(std::stop_token stoken) {
             nnid = configNetId ? GetNetworkId() : "";
 
             // Prepare and send json
-            json = "{\"sender\":\"Wii U\",\"long\":\"" + ReplaceSlashN(GetAppTitle(ENGLISH, true)) + "\",\"app\":\"" + app + "\",\"time\":" + std::to_string(elapsed + (configTimeset * 3600)) + ",\"ctrls\":" + std::to_string(ctrls) + ",\"nnid\":\"" + nnid + "\",\"img\":\"" + (configSmallImg ? GetNetwork(INKAY_EXISTS, INKAY_CONFIG) : "") + "\",\"dst\":" + std::to_string(configDst) + "}";
+            json = "{\"sender\":\"Wii U\",\"long\":\"" + ReplaceSlashN(GetAppTitle(ENGLISH, true)) + "\",\"app\":\"" + app + "\",\"time\":" + std::to_string(elapsed + (configTimeset * 3600)) + ",\"ctrls\":" + std::to_string(ctrls) + ",\"nnid\":\"" + nnid + "\",\"img\":\"" + (configSmallImg ? GetNetwork(INKAY_EXISTS, INKAY_CONFIG) : "") + "\",\"dst\":" + std::to_string(configDst) + ",\"compatibility\":" + std::to_string(COMPATIBLE_VERSION) + "}";
             Broadcast(json);
         }
 

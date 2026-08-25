@@ -10,10 +10,10 @@ from datetime import datetime
 from pypresence import Presence
 from pypresence.types import ActivityType, StatusDisplayType
 
+VERSION = 2.2
 APP_ID = "1353248127469228074"
 REPO = "flamingnineteen/richpresencewups-db"
 PORT = 5005
-VERSION = 2.2
 
 # Check for command line arguments
 i = 2
@@ -25,11 +25,6 @@ while i < len(sys.argv):
         PORT = int(sys.argv[i])
         print(f"Using port {PORT}.")
     i+=2
-
-# Check for updates
-update = requests.get(f'https://github.com/FlamingNineteen/RichPresenceWUPS/releases/tag/v{VERSION + 0.1}')
-if (update.status_code >= 200 and update.status_code < 300):
-    print('A new update is available')
 
 # Connect to Discord
 client = Presence(client_id = APP_ID)
@@ -100,9 +95,9 @@ async def clearPresence():
 # Main loop
 async def main():
     global idle
+    updateMsg = False
     while 1:
         # Wait for a message
-        print("Waiting to recieve message")
         msg = await asyncio.to_thread(sock.recv, 1024)
         data = parse(msg.decode())
         print(f"Recieved: {data}")
@@ -134,6 +129,11 @@ async def main():
                 )
 
                 print("Updated Rich Presence")
+
+                if "compatibility" in data:
+                    if data["compatibility"] > VERSION and not updateMsg:
+                        print(f'A new update is available: v{data["compatibility"]}')
+                        updateMsg = True
         except:
             print("Failed to update Rich Presence")
 

@@ -1,5 +1,3 @@
-constexpr double VERSION = 2.2;
-
 #include <thread>
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -25,13 +23,7 @@ int main(int argc, char* argv[]) {
         }
         i+=2;
     }
-
-    std::string ver = std::to_string(VERSION + 0.1);
-    unsigned short update = getStatusCode("github.com", "/FlamingNineteen/RichPresenceWUPS/releases/tag/v" + ver.replace(ver.find(".") + 2, ver.length() - ver.find(".") - 2, ""));
-    if (update >= 200 && update < 300) {
-        fmt::println("A new update is available");
-    }
-
+    
     discordSetup();
     discord::RPCManager::get().initialize();
 

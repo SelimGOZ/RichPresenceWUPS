@@ -1,6 +1,8 @@
 #include <discord-rpc.hpp>
 #include <fmt/format.h>
 
+#include "version.h"
+
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -8,6 +10,7 @@ constexpr auto APPLICATION_ID = "1353248127469228074";
 unsigned short UDP_PORT = 5005;
 std::atomic<bool> idle = false;
 std::atomic<bool> runIdleLoop = true;
+bool updateMsg = false;
 
 // Setup the Rich Presence manager and its events
 void discordSetup() {
@@ -79,19 +82,24 @@ short parseJsonAndUpdate(std::string msg, json images, std::string repo, time_t 
 
     try {
         json out = json::parse(msg);
-        if (out["sender"] == "Wii U") {
-            
-            fmt::println("Received: {}", msg);
 
+        // Check if the sender is the Wii U
+        if (out["sender"] == "Wii U") {
+            fmt::println("Received: {}", msg);
             idle = false;
         }
+        else {
+            return 0;
+        }
 
+        // Try to get the icon from the database
         try {
             image = images[out["long"]];
         } catch (...) {
             image = "oh no it didn't work";
         }
         
+        // Update presence, but also make sure it's backwards compatible
         if (out.contains("dst")) { // Update 2.1
             updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"], out["dst"] == 1));
         }
@@ -100,6 +108,15 @@ short parseJsonAndUpdate(std::string msg, json images, std::string repo, time_t 
         }
         else { // Update 1.9
             updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, "backwards", adjustEpochToUtc(out["time"], false));
+        }
+
+        // Check for updates
+        if (out.contains("compatibility")) {
+            if ((out["compatibility"] > VERSION) && !updateMsg) {
+                double v = out["compatibility"];
+                fmt::println("A new update is available: v{}", v);
+                updateMsg = true;
+            }
         }
     }
     catch (...) {
