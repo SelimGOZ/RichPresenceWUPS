@@ -8,7 +8,7 @@
  * Specifically, this version of the pc app should be able to support all features
  * of the current version of the plugin.
  */
-#define COMPATIBLE_VERSION (double) 2.2
+#define COMPATIBLE_VERSION (double) 2.3
 
 #pragma once
 
@@ -22,10 +22,10 @@
 enum CtrlOptions {
     // Do not display controller count
     NODISPLAY,
-    
+
     // Display the controller count, excluding the Gamepad
     CTRLCOUNTNODRC,
-    
+
     // Display the total controller count
     CTRLCOUNT
 };
