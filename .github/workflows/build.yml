@@ -50,7 +50,7 @@ jobs:
         run: |
           cd discord
           mkdir build && cd build
-          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-static" ..
           cmake --build .
 
       - name: Build (Linux / macOS)

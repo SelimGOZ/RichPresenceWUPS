@@ -9,6 +9,7 @@
     #include <shellapi.h>
     #define WM_TRAYICON (WM_USER + 1)
     #define ID_TRAY_QUIT 1001
+    #define ID_TRAY_STARTUP 1002
     NOTIFYICONDATAW nid = {};
 #elif defined(__linux__) || defined(__APPLE__)
     #include "unix.hpp"
@@ -46,6 +47,31 @@ void SetupConsole() {
     }
 }
 
+bool IsStartupEnabled() {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
+        LRESULT res = RegQueryValueExW(hKey, L"WiiURichPresence", NULL, NULL, NULL, NULL);
+        RegCloseKey(hKey);
+        return (res == ERROR_SUCCESS);
+    }
+    return false;
+}
+
+void SetStartup(bool enable) {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
+        if (enable) {
+            wchar_t path[MAX_PATH];
+            GetModuleFileNameW(NULL, path, MAX_PATH);
+            std::wstring quotedPath = L"\"" + std::wstring(path) + L"\"";
+            RegSetValueExW(hKey, L"WiiURichPresence", 0, REG_SZ, (const BYTE*)quotedPath.c_str(), (quotedPath.length() + 1) * sizeof(wchar_t));
+        } else {
+            RegDeleteValueW(hKey, L"WiiURichPresence");
+        }
+        RegCloseKey(hKey);
+    }
+}
+
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_TRAYICON:
@@ -55,21 +81,28 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 SetForegroundWindow(hwnd);
 
                 HMENU hMenu = CreatePopupMenu();
+
+                UINT startupFlags = IsStartupEnabled() ? (MF_STRING | MF_CHECKED) : (MF_STRING | MF_UNCHECKED);
+                AppendMenuW(hMenu, startupFlags, ID_TRAY_STARTUP, L"Launch on Startup");
+                AppendMenuW(hMenu, MF_SEPARATOR, 0, NULL);
                 AppendMenuW(hMenu, MF_STRING, ID_TRAY_QUIT, L"Quit Wii U Rich Presence");
 
                 TrackPopupMenu(hMenu, TPM_BOTTOMALIGN | TPM_RIGHTALIGN, cursor.x, cursor.y, 0, hwnd, NULL);
                 DestroyMenu(hMenu);
             }
             break;
+
         case WM_COMMAND:
-            if (LOWORD(wParam) == ID_TRAY_QUIT) {
+            if (LOWORD(wParam) == ID_TRAY_STARTUP) {
+                SetStartup(!IsStartupEnabled());
+            }
+            else if (LOWORD(wParam) == ID_TRAY_QUIT) {
                 Shell_NotifyIconW(NIM_DELETE, &nid);
-
                 discord::RPCManager::get().shutdown();
-
                 std::exit(0);
             }
             break;
+
         case WM_DESTROY:
             Shell_NotifyIconW(NIM_DELETE, &nid);
             PostQuitMessage(0);
