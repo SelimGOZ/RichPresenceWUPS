@@ -148,7 +148,7 @@ std::string GetAppTitle(LangOptions lang = ENGLISH, bool full = false) {
     return "";
 }
 
-/** 
+/**
  * Replaces any instances of `"\\n"` from a string with
  * `" "`, effectively putting everything onto one line.
  * @param s The string to replace.
@@ -179,29 +179,48 @@ std::string GetNetworkId() {
  * Network is decided by the Inkay config file.
  * @return `"nn"` for Nintendo,
  *         `"pn"` for Pretendo,
+ *         `"bn"` for Brewtendo,
  *         `""` upon error.
  */
-std::string GetNetwork(bool inkayExists, std::string inkayConfig) {
+std::string GetNetwork(bool inkayExists, std::string inkayConfig, bool bnkayExists, std::string bnkayConfig) {
+    if (bnkayExists) {
+        std::ifstream acc(bnkayConfig);
+        if (acc.is_open()) {
+            std::string line;
+            bool netTrue = false;
+            bool brewTrue = false;
+
+            while (std::getline(acc, line)) {
+                if (line.find("connect_to_network") != std::string::npos && line.find("true") != std::string::npos) {
+                    netTrue = true;
+                }
+                if (line.find("connect_to_brewtendo") != std::string::npos && line.find("true") != std::string::npos) {
+                    brewTrue = true;
+                }
+            }
+
+            if (netTrue && brewTrue) {
+                return "bn";
+            } else if (netTrue) {
+                return "pn";
+            } else {
+                return "nn";
+            }
+        }
+    }
+
     if (inkayExists) {
         std::ifstream acc(inkayConfig);
-        if (!acc.is_open()) {
-            return "";
-        }
-
-        size_t pos;
-        std::string line;
-        while (std::getline(acc, line)) {
-            pos = line.find("connect_to_network");
-            if (pos != std::string::npos) {
-                pos = line.find("true");
-                if (pos != std::string::npos) {
+        if (acc.is_open()) {
+            std::string line;
+            while (std::getline(acc, line)) {
+                if (line.find("connect_to_network") != std::string::npos && line.find("true") != std::string::npos) {
                     return "pn";
-                } else {
-                    return "nn";
                 }
             }
         }
     }
+
     return "nn";
 }
 

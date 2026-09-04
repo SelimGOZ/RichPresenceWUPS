@@ -34,7 +34,9 @@ std::string app    = "";
 std::string preapp = "quantum random!!!11!";
 
 bool INKAY_EXISTS;
+bool BNKAY_EXISTS;
 std::string INKAY_CONFIG;
+std::string BNKAY_CONFIG;
 
 // Broadcast over port 5005
 void Broadcast(const std::string& json) {
@@ -78,7 +80,7 @@ void GameLoop(std::stop_token stoken) {
             nnid = configNetId ? GetNetworkId() : "";
 
             // Prepare and send json
-            json = "{\"sender\":\"Wii U\",\"long\":\"" + ReplaceSlashN(GetAppTitle(ENGLISH, true)) + "\",\"app\":\"" + app + "\",\"time\":" + std::to_string(elapsed + (configTimeset * 3600)) + ",\"ctrls\":" + std::to_string(ctrls) + ",\"nnid\":\"" + nnid + "\",\"img\":\"" + (configSmallImg ? GetNetwork(INKAY_EXISTS, INKAY_CONFIG) : "") + "\",\"dst\":" + std::to_string(configDst) + ",\"compatibility\":" + std::to_string(COMPATIBLE_VERSION) + "}";
+            json = "{\"sender\":\"Wii U\",\"long\":\"" + ReplaceSlashN(GetAppTitle(ENGLISH, true)) + "\",\"app\":\"" + app + "\",\"time\":" + std::to_string(elapsed + (configTimeset * 3600)) + ",\"ctrls\":" + std::to_string(ctrls) + ",\"nnid\":\"" + nnid + "\",\"img\":\"" + (configSmallImg ? GetNetwork(INKAY_EXISTS, INKAY_CONFIG, BNKAY_EXISTS, BNKAY_CONFIG) : "") + "\",\"dst\":" + std::to_string(configDst) + ",\"compatibility\":" + std::to_string(COMPATIBLE_VERSION) + "}";
             Broadcast(json);
         }
 
@@ -128,11 +130,13 @@ INITIALIZE_PLUGIN() {
     char environment_path_buffer[0x100];
     Mocha_GetEnvironmentPath(environment_path_buffer, sizeof(environment_path_buffer));
     INKAY_CONFIG = std::string(environment_path_buffer) + std::string("/plugins/config/inkay.json");
+    BNKAY_CONFIG = std::string(environment_path_buffer) + std::string("/plugins/config/bnkay.json");
     INKAY_EXISTS = std::filesystem::exists(INKAY_CONFIG);
+    BNKAY_EXISTS = std::filesystem::exists(BNKAY_CONFIG);
 }
 
 ON_APPLICATION_START() {
-    app = GetXmlTag("shortname_en") == "Health and Safety Information" ? "Homebrew Application" : ReplaceSlashN(GetAppTitle(configLang, configTitle)); 
+    app = GetXmlTag("shortname_en") == "Health and Safety Information" ? "Homebrew Application" : ReplaceSlashN(GetAppTitle(configLang, configTitle));
 
     if (app != preapp) elapsed = time(NULL); // Only update elapsed time if app changed
     preapp = app;
@@ -144,7 +148,7 @@ ON_APPLICATION_START() {
     if (configEnabled && !(configCod && app.find("Call of Duty") != std::string::npos)) tthread = std::jthread(GameLoop);
 }
 
-ON_APPLICATION_REQUESTS_EXIT() {    
+ON_APPLICATION_REQUESTS_EXIT() {
     if (tthread.joinable()) {
         tthread.request_stop();
         tthread.join(); // Wait for thread to finish

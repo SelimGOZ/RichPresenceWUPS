@@ -1,2 +1,3 @@
 #include "resource.h"
+#define IDI_APP_ICON 101
 IDI_ICON ICON "app.ico"

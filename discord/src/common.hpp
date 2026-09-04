@@ -6,7 +6,7 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-constexpr auto APPLICATION_ID = "1353248127469228074";
+constexpr auto APPLICATION_ID = "1545284624127758357";
 unsigned short UDP_PORT = 5005;
 std::atomic<bool> idle = false;
 std::atomic<bool> runIdleLoop = true;
@@ -42,7 +42,7 @@ void updatePresence(std::string repo, std::string game, std::string full, std::s
         .setLargeImageKey((jpg == "oh no it didn't work") ? "preview" : ("https://raw.githubusercontent.com/" + repo + "/main/icons/" + jpg))
         .setLargeImageText(full)
         .setSmallImageKey(img == "backwards" ? "" : img)
-        .setSmallImageText(img == "nn" ? "Using Nintendo Network" : "Using Pretendo Network")
+        .setSmallImageText(img == "nn" ? "Using Nintendo Network" : (img == "pn" ? "Using Pretendo Network" : "Using Brewtendo Network"))
         .setPartyID(ctrls > -2 ? "wiiu" : "")
         .setPartySize(ctrls > -2 ? ctrls + 1 : 0)
         .setPartyMax(maxParty)
@@ -98,7 +98,7 @@ short parseJsonAndUpdate(std::string msg, json images, std::string repo, time_t 
         } catch (...) {
             image = "oh no it didn't work";
         }
-        
+
         // Update presence, but also make sure it's backwards compatible
         if (out.contains("dst")) { // Update 2.1
             updatePresence(repo, out["app"], out["long"], out["nnid"], out["ctrls"], image, out["img"], adjustEpochToUtc(out["time"], out["dst"] == 1));
