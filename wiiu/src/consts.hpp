@@ -1,14 +1,14 @@
 /**
  * The version number of the plugin.
  */
-#define VERSION "v2.2"
+#define VERSION "v2.4"
 
 /**
  * The oldest version of the pc app that the plugin completely supports, as a double.
  * Specifically, this version of the pc app should be able to support all features
  * of the current version of the plugin.
  */
-#define COMPATIBLE_VERSION (double) 2.3
+#define COMPATIBLE_VERSION (double) 2.2
 
 #pragma once
 
