@@ -1,0 +1,124 @@
+name: Build WURP
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-desktop:
+    name: Build for ${{ matrix.osName }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            osName: Windows
+            executable: WiiURichPresence.exe
+            artifact: WURP-Windows.exe
+          - os: ubuntu-latest
+            osName: Linux
+            executable: WiiURichPresence
+            artifact: WURP-Linux
+          - os: macos-latest
+            osName: macOS
+            executable: WiiURichPresence
+            artifact: WURP-MacOS
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake libcurl4-openssl-dev
+
+      - name: Setup MSYS2 (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-make
+
+      - name: Build (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          cd discord
+          mkdir build && cd build
+          cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+
+      - name: Build (Linux / macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          cd discord
+          mkdir build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
+
+      - name: Rename Artifact
+        run: |
+          cd discord
+          cd build
+          mv ${{ matrix.executable }} ${{ matrix.artifact }}
+
+      - name: Upload Desktop Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: discord/build/${{ matrix.artifact }}
+
+  build-wiiu:
+    name: Build Wii U Plugin
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker Build Image
+        run: docker build -t wurp-wiiu-builder -f wiiu/Dockerfile .
+
+      - name: Build Plugin
+        run: |
+            cd wiiu
+
+            docker run -d --name compiler-container wurp-wiiu-builder tail -f /dev/null
+
+            docker cp . compiler-container:/project
+
+            docker exec compiler-container make
+
+            docker cp compiler-container:/project/. .
+
+            docker rm -f compiler-container
+
+      - name: Upload Plugin Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: WURP-Plugin.wps
+          path: ./wiiu/*.wps
+
+  release:
+    name: Create GitHub Release
+    needs: [build-desktop, build-wiiu]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
